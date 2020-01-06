@@ -107,8 +107,12 @@ function framePrototype:Update()
 
 					icon.texture:SetTexture(GetItemIcon(trinket))
 					if duration ~= 0 and data_i.timestamp+duration > GetTime() then
-						local uptime = trinket2uptime[trinket] or 0
-						icon.cooldown:SetCooldown(data_i.timestamp+uptime,duration-uptime)
+						local uptime = trinket2uptime[trinket]
+						if uptime and GetTime() > data_i.timestamp + uptime then
+							icon.cooldown:SetCooldown(data_i.timestamp+uptime,duration-uptime)
+						else
+							icon.cooldown:SetCooldown(data_i.timestamp,duration)
+						end
 						icon.bg:SetTexture(0.8,0,0)
 					else
 						icon.cooldown:Hide()
