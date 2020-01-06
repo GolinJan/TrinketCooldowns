@@ -1,5 +1,0 @@
-## Interface: 30300
-## Title: Trinkets Cooldown
-## Authors: igil ua
-arrays.lua
-init.lua
