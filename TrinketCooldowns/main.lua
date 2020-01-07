@@ -101,7 +101,7 @@ local SLOTS = {
 		local link = GetInventoryItemLink(unit,INVSLOT_BACK)
 		if link then
 			local id = tonumber(link:match("|Hitem:%d+:(%d+):"))
-			if id and item2cooldown[id] then
+			if item2cooldown[id] then
 				return id,GetItemIcon(link)
 			end
 		end
