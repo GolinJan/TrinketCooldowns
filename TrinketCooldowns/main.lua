@@ -37,7 +37,7 @@ local addon = CreateFrame("frame")
 local objects,cache = {},{}
 local spell2item,item2uptime,item2cooldown,item2slot = {},{},{},{}
 do
-	local namespace,item = select(2,...)
+	local namespace = select(2,...)
 
 	local item
 	for spell,data in pairs(namespace[1]) do
