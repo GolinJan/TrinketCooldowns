@@ -200,7 +200,7 @@ function framePrototype:Update()
 					duration = item2cooldown[data_i.item]
 					if duration and duration ~= 0 and data_i.timestamp and data_i.timestamp+duration > GetTime() then -- cooldown
 						local uptime = item2uptime[data_i.item]
-						if uptime and GetTime() - data_i.timestamp + uptime > 0.1 then
+						if uptime and GetTime() > data_i.timestamp+uptime-0.1 then
 							icon.cooldown:SetCooldown(data_i.timestamp+uptime-0.1,duration-uptime)
 						else
 							icon.cooldown:SetCooldown(data_i.timestamp,duration)
@@ -427,14 +427,13 @@ end
 
 function addon:SaveItemToCache(guid,spell,timestamp)
  	local item = spell2item[spell]
- 	local itemIsTbl = type(item) == "table"
  	local tbl = {spell = spell, item = item, timestamp = timestamp, texture = GetItemIcon(item)}
 
 	local guidCache = cache[guid]
 	if guidCache then
 		local added = false
 		for i = 1,#guidCache do
-			if itemIsTbl then
+			if type(item) == "table" then
 				for j = 1,#item do
 					if guidCache[i].item == item[j] then
 						tbl.texture = guidCache[i].texture or tbl.texture
