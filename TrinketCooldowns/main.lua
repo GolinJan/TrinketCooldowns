@@ -37,22 +37,13 @@ local addon = CreateFrame("frame")
 local objects,cache = {},{}
 local spell2item,item2uptime,item2cooldown,item2slot = {},{},{},{}
 do
-	local namespace = select(2,...)
+	local namespace,item = select(2,...)
 
 	local item
 	for spell,data in pairs(namespace[1]) do
 		item = data[1]
 
-		if type(item) == "table" then
-			for i = 1,#item do
-				spell2item[spell] = item[i]
-			end
-		else
-			spell2item[spell] = item
-		end
-
-		item2cooldown[item] = data[2]
-		item2slot[item] = data[3]
+		spell2item[spell],item2cooldown[item],item2slot[item] = unpack(data)
 	end
 
 	namespace[1] = nil
@@ -209,8 +200,8 @@ function framePrototype:Update()
 					duration = item2cooldown[data_i.item]
 					if duration and duration ~= 0 and data_i.timestamp and data_i.timestamp+duration > GetTime() then -- cooldown
 						local uptime = item2uptime[data_i.item]
-						if uptime and GetTime() > data_i.timestamp + uptime then
-							icon.cooldown:SetCooldown(data_i.timestamp+uptime,duration-uptime)
+						if uptime and GetTime() - data_i.timestamp + uptime > 0.1 then
+							icon.cooldown:SetCooldown(data_i.timestamp+uptime-0.1,duration-uptime)
 						else
 							icon.cooldown:SetCooldown(data_i.timestamp,duration)
 						end
@@ -436,16 +427,33 @@ end
 
 function addon:SaveItemToCache(guid,spell,timestamp)
  	local item = spell2item[spell]
+ 	local itemIsTbl = type(item) == "table"
  	local tbl = {spell = spell, item = item, timestamp = timestamp, texture = GetItemIcon(item)}
 
 	local guidCache = cache[guid]
 	if guidCache then
 		local added = false
 		for i = 1,#guidCache do
-			if guidCache[i].item == item then
-				guidCache[i] = tbl
+			if itemIsTbl then
+				for j = 1,#item do
+					if guidCache[i].item == item[j] then
+						tbl.texture = guidCache[i].texture or tbl.texture
+						guidCache[i] = tbl
 
-				added = true
+						added = true
+						break
+					end
+				end
+			else
+				if guidCache[i].item == item then
+					tbl.texture = guidCache[i].texture or tbl.texture
+					guidCache[i] = tbl
+
+					added = true
+				end
+			end
+
+			if added then
 				break
 			end
 		end
