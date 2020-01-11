@@ -35,15 +35,22 @@ local SLOT_BACK = 0x4
 
 local addon = CreateFrame("frame")
 local objects,cache = {},{}
-local spell2item,item2uptime,item2cooldown,item2slot = {},{},{},{}
+local spell2item,item2uptime,item2cooldown,item2slot,itemEqualItem = {},{},{},{},{}
 do
 	local namespace = select(2,...)
 
 	local item
 	for spell,data in pairs(namespace[1]) do
 		item = data[1]
+		if type(item) == "table" then
+			for i = 2,#item do
+				itemEqualItem[item[i]] = item[1]
+			end
 
-		spell2item[spell],item2cooldown[item],item2slot[item] = unpack(data)
+			item = item[1]
+		end
+
+		spell2item[spell],item2cooldown[item],item2slot[item] = item,data[2],data[3]
 	end
 
 	namespace[1] = nil
@@ -287,6 +294,8 @@ function framePrototype:InspectInner()
 	local item,texture
 	for i = 1,#SLOTS do
 		item,texture = SLOTS[i](unit)
+		item = itemEqualItem[item] or item
+		
 		if item then
 			tbl[#tbl+1] = {item = item, texture = texture}
 		end
@@ -426,45 +435,32 @@ function addon:AlignGuidCache(guidCache,slot)
 end
 
 function addon:SaveItemToCache(guid,spell,timestamp)
- 	local item = spell2item[spell]
- 	local tbl = {spell = spell, item = item, timestamp = timestamp, texture = GetItemIcon(item)}
+ 	local realItem = spell2item[spell]
+ 	local item = itemEqualItem[realItem] or realItem
 
 	local guidCache = cache[guid]
 	if guidCache then
-		local added = false
+		local added
 		for i = 1,#guidCache do
-			if type(item) == "table" then
-				for j = 1,#item do
-					if guidCache[i].item == item[j] then
-						tbl.texture = guidCache[i].texture or tbl.texture
-						guidCache[i] = tbl
-
-						added = true
-						break
-					end
-				end
-			else
+			for i = 1,#guidCache do
 				if guidCache[i].item == item then
-					tbl.texture = guidCache[i].texture or tbl.texture
-					guidCache[i] = tbl
+					guidCache[i].spell = spell
+					guidCache[i].timestamp = timestamp
 
 					added = true
+					break
 				end
-			end
-
-			if added then
-				break
 			end
 		end
 
 		if not added then
-			guidCache[#guidCache+1] = tbl
+			guidCache[#guidCache+1] = {spell = spell, item = item, timestamp = timestamp, texture = GetItemIcon(realItem)}
 		end
 
 		self:AlignGuidCache(guidCache,item2slot[item])
 		self:UpdateObjectByGUID(guid) -- object:UpdateUnit() creates cache[guid] field
 	else
-		cache[guid] = {tbl}
+		cache[guid] = {{spell = spell, item = item, timestamp = timestamp, texture = GetItemIcon(realItem)}}
 	end
 end
 
